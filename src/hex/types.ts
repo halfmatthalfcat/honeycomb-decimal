@@ -1,11 +1,12 @@
+import Decimal from 'decimal.js'
 import { Hex } from './hex'
 
 /**
  * @category Coordinates
  */
 export interface Point {
-  x: number
-  y: number
+  x: Decimal
+  y: Decimal
 }
 
 /**
@@ -20,16 +21,16 @@ export enum Orientation {
  * @category Coordinates
  */
 export interface OffsetCoordinates {
-  col: number
-  row: number
+  col: Decimal
+  row: Decimal
 }
 
 /**
  * @category Coordinates
  */
 export interface AxialCoordinates {
-  q: number
-  r: number
+  q: Decimal
+  r: Decimal
 }
 
 // todo: Try to use template literal tags to enforce q, r and s sum to 0: https://stackoverflow.com/a/69413070/660260
@@ -37,23 +38,23 @@ export interface AxialCoordinates {
  * @category Coordinates
  */
 export interface CubeCoordinates {
-  q: number
-  r: number
-  s: number
+  q: Decimal
+  r: Decimal
+  s: Decimal
 }
 
 /**
  * @category Coordinates
  */
 export type PartialCubeCoordinates =
-  | { q?: number; r: number; s: number }
-  | { q: number; r?: number; s: number }
-  | { q: number; r: number; s?: number }
+  | { q?: Decimal; r: Decimal; s: Decimal }
+  | { q: Decimal; r?: Decimal; s: Decimal }
+  | { q: Decimal; r: Decimal; s?: Decimal }
 
 /**
  * @category Coordinates
  */
-export type TupleCoordinates = [q: number, r: number, s?: number]
+export type TupleCoordinates = [q: Decimal, r: Decimal, s?: Decimal]
 
 /**
  * @category Coordinates
@@ -66,8 +67,8 @@ export interface Ellipse {
 }
 
 export interface BoundingBox {
-  width: number
-  height: number
+  width: Decimal
+  height: Decimal
 }
 
 /**

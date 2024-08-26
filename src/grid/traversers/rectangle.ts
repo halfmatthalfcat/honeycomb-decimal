@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { completeCube, Hex, HexCoordinates, HexOffset, hexToOffset, OffsetCoordinates } from '../../hex'
 import { isOffset, isTuple, rotate, tupleToCube } from '../../utils'
 import { Direction, Traverser } from '../types'
@@ -26,10 +27,10 @@ export function rectangle<T extends Hex>(
     } = cornerB
       ? optionsFromOpposingCorners(optionsOrCornerA as HexCoordinates, cornerB, createHex())
       : (optionsOrCornerA as RectangleOptions)
-    const startCoordinates = start ?? cursor ?? [0, 0]
+    const startCoordinates = start ?? cursor ?? [new Decimal(0), new Decimal(0)]
     const hexes = repeatWith<T>(
       line({ start: startCoordinates, direction: rotate(direction, 2), length: height }),
-      line({ direction, length: width - 1 }),
+      line({ direction, length: width.minus(1) }),
     )(createHex, startCoordinates)
 
     return !start && cursor ? hexes.slice(1) : hexes
@@ -42,8 +43,8 @@ export function rectangle<T extends Hex>(
  */
 export interface RectangleOptions {
   start?: HexCoordinates
-  width: number
-  height: number
+  width: Decimal
+  height: Decimal
   direction?: Direction
 }
 
@@ -54,12 +55,12 @@ function optionsFromOpposingCorners(
 ): RectangleOptions {
   const { col: cornerACol, row: cornerARow } = assertOffsetCoordinates(cornerA, isPointy, offset)
   const { col: cornerBCol, row: cornerBRow } = assertOffsetCoordinates(cornerB, isPointy, offset)
-  const smallestCol = cornerACol < cornerBCol ? 'A' : 'B'
-  const smallestRow = cornerARow < cornerBRow ? 'A' : 'B'
+  const smallestCol = cornerACol.lessThan(cornerBCol) ? 'A' : 'B'
+  const smallestRow = cornerARow.lessThan(cornerBRow) ? 'A' : 'B'
   const smallestColRow = (smallestCol + smallestRow) as keyof typeof RULES_FOR_SMALLEST_COL_ROW
   const { swapWidthHeight, direction } = RULES_FOR_SMALLEST_COL_ROW[smallestColRow]
-  const width = Math.abs(cornerACol - cornerBCol) + 1
-  const height = Math.abs(cornerARow - cornerBRow) + 1
+  const width = cornerACol.minus(cornerBCol).abs().plus(1)
+  const height = cornerARow.minus(cornerBRow).abs().plus(1)
 
   return {
     width: swapWidthHeight ? height : width,

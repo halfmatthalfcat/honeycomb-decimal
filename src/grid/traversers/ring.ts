@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { Hex, HexCoordinates, toCube } from '../../hex'
 import { isNumber } from '../../utils'
 import { distance } from '../functions'
@@ -19,7 +20,7 @@ export function ring<T extends Hex>(options: RingOptions | RingFromRadiusOptions
     let firstHex: T
 
     if (hasRadiusOption) {
-      firstHex = createHex(center).translate({ q: radius, s: -radius })
+      firstHex = createHex(center).translate({ q: new Decimal(radius), s: new Decimal(radius).neg() })
     } else {
       firstHex = createHex((options as RingOptions).start ?? cursor)
       radius = distance(firstHex, center, firstHex)
@@ -27,13 +28,13 @@ export function ring<T extends Hex>(options: RingOptions | RingFromRadiusOptions
 
     // always start at coordinates radius away from the center, reorder the hexes later
     const { q, r, s } = toCube(firstHex, center)
-    let _cursor = createHex({ q, r: r - radius, s: s + radius })
+    let _cursor = createHex({ q, r: r.minus(radius), s: s.plus(radius) })
 
     if (_rotation === Rotation.CLOCKWISE) {
       for (let direction = 0; direction < 6; direction++) {
         for (let i = 0; i < radius; i++) {
           const { q, r } = DIRECTION_COORDINATES[direction]
-          _cursor = createHex({ q: _cursor.q + q, r: _cursor.r + r })
+          _cursor = createHex({ q: _cursor.q.plus(q), r: _cursor.r.plus(r) })
           hexes.push(_cursor)
         }
       }
@@ -41,7 +42,7 @@ export function ring<T extends Hex>(options: RingOptions | RingFromRadiusOptions
       for (let direction = 5; direction >= 0; direction--) {
         for (let i = 0; i < radius; i++) {
           const { q, r } = DIRECTION_COORDINATES[direction]
-          _cursor = createHex({ q: _cursor.q - q, r: _cursor.r - r })
+          _cursor = createHex({ q: _cursor.q.minus(q), r: _cursor.r.minus(r) })
           hexes.push(_cursor)
         }
       }

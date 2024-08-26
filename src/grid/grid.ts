@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { AxialCoordinates, defineHex, Hex, HexConstructor, HexCoordinates, Point, pointToCube } from '../hex'
 import { isFunction } from '../utils'
 import { distance, neighborOf } from './functions'
@@ -26,7 +27,9 @@ export class Grid<T extends Hex> implements HexIterable<T>, HexTraversable<T> {
       const HexClass = (
         hexes.length > 0
           ? hexes[0].constructor
-          : hexFactory({ q: 0, r: 0 } as T, 0, [{ q: 0, r: 0 }] as T[]).constructor
+          : hexFactory({ q: new Decimal(0), r: new Decimal(0) } as T, 0, [
+              { q: new Decimal(0), r: new Decimal(0) },
+            ] as T[]).constructor
       ) as HexConstructor<R>
       return new Grid<R>(HexClass, hexes)
     }
@@ -42,8 +45,8 @@ export class Grid<T extends Hex> implements HexIterable<T>, HexTraversable<T> {
     return this.#hexes.size
   }
 
-  get pixelWidth(): number {
-    if (this.size === 0) return 0
+  get pixelWidth(): Decimal {
+    if (this.size === 0) return new Decimal(0)
 
     const { isPointy, width } = this.hexPrototype
     const hexes = this.toArray()
@@ -52,13 +55,15 @@ export class Grid<T extends Hex> implements HexIterable<T>, HexTraversable<T> {
       0: mostLeft,
       length,
       [length - 1]: mostRight,
-    } = isPointy ? hexes.sort((a, b) => b.s - a.s || a.q - b.q) : hexes.sort((a, b) => a.q - b.q)
+    } = isPointy
+      ? hexes.sort((a, b) => b.s.minus(a.s).toNumber() || a.q.minus(b.q).toNumber())
+      : hexes.sort((a, b) => a.q.minus(b.q).toNumber())
 
-    return mostRight.x - mostLeft.x + width
+    return mostRight.x.minus(mostLeft.x).plus(width)
   }
 
-  get pixelHeight(): number {
-    if (this.size === 0) return 0
+  get pixelHeight(): Decimal {
+    if (this.size === 0) return new Decimal(0)
 
     const { isPointy, height } = this.hexPrototype
     const hexes = this.toArray()
@@ -67,9 +72,11 @@ export class Grid<T extends Hex> implements HexIterable<T>, HexTraversable<T> {
       0: mostTop,
       length,
       [length - 1]: mostBottom,
-    } = isPointy ? hexes.sort((a, b) => a.r - b.r) : hexes.sort((a, b) => b.s - a.s || a.r - b.r)
+    } = isPointy
+      ? hexes.sort((a, b) => a.r.minus(b.r).toNumber())
+      : hexes.sort((a, b) => b.s.minus(a.s).toNumber() || a.r.minus(b.r).toNumber())
 
-    return mostBottom.y - mostTop.y + height
+    return mostBottom.y.minus(mostTop.y).plus(height)
   }
 
   [Symbol.iterator](): IterableIterator<T> {

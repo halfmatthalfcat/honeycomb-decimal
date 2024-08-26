@@ -1,23 +1,26 @@
-import { offsetFromZero } from '../../utils'
+import Decimal from 'decimal.js'
+import { offsetDelta } from '../../utils'
 import { CubeCoordinates, HexOffset, HexSettings, OffsetCoordinates, Orientation } from '../types'
+
+Decimal.set({ rounding: 7 })
 
 /**
  * @hidden
  */
-export const offsetToCubePointy = (col: number, row: number, offset: HexOffset): CubeCoordinates => {
-  const q = col - offsetFromZero(offset, row)
+export const offsetToCubePointy = (col: Decimal, row: Decimal, offset: HexOffset): CubeCoordinates => {
+  const q = col.minus(offsetDelta(offset, row).round())
   const r = row
-  const s = -q - r
+  const s = q.neg().minus(r)
   return { q, r, s }
 }
 
 /**
  * @hidden
  */
-export const offsetToCubeFlat = (col: number, row: number, offset: HexOffset): CubeCoordinates => {
+export const offsetToCubeFlat = (col: Decimal, row: Decimal, offset: HexOffset): CubeCoordinates => {
   const q = col
-  const r = row - offsetFromZero(offset, col)
-  const s = -q - r
+  const r = row.minus(offsetDelta(offset, col).round())
+  const s = q.neg().minus(r)
   return { q, r, s }
 }
 

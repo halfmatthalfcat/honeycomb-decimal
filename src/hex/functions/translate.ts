@@ -13,7 +13,7 @@ export function translate<T extends Hex>(
 ): T | CubeCoordinates {
   const { q, r, s } = completeCube(input)
   const { q: deltaQ, r: deltaR, s: deltaS } = completeCube(delta)
-  const translation = { q: q + deltaQ, r: r + deltaR, s: s + deltaS }
+  const translation = { q: q.plus(deltaQ), r: r.plus(deltaR), s: s.plus(deltaS) }
 
   return input instanceof Hex ? input.clone(translation) : translation
 }

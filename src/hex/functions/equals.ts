@@ -11,7 +11,7 @@ export function equals(
 export function equals(a: OffsetCoordinates, b: OffsetCoordinates): boolean
 export function equals(a: HexCoordinates, b: HexCoordinates) {
   if (isOffset(a) && isOffset(b)) {
-    return a.col === b.col && a.row === b.row
+    return a.col.eq(b.col) && a.row.eq(b.row)
   }
 
   // can't use isOffset() because that also checks in the prototype chain and that would always return true for hexes
@@ -25,5 +25,5 @@ export function equals(a: HexCoordinates, b: HexCoordinates) {
 
   const cubeA = (isTuple(a) ? tupleToCube(a) : a) as CubeCoordinates
   const cubeB = (isTuple(b) ? tupleToCube(b) : b) as CubeCoordinates
-  return cubeA.q === cubeB.q && cubeA.r === cubeB.r
+  return cubeA.q.eq(cubeB.q) && cubeA.r.eq(cubeB.r)
 }

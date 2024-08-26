@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { AxialCoordinates, CubeCoordinates, Hex, HexCoordinates, round, toCube } from '../../hex'
 import { distance, neighborOf } from '../functions'
 import { Direction, Traverser } from '../types'
@@ -17,7 +18,7 @@ export function line<T extends Hex>(options: LineAsVectorOptions | LineBetweenOp
 export interface LineAsVectorOptions {
   start?: HexCoordinates
   direction: Direction
-  length: number
+  length: Decimal
 }
 
 /**
@@ -46,7 +47,7 @@ function lineFromVectorOptions<T extends Hex>({ start, direction, length }: Line
       _cursor = neighborOf(_cursor, direction)
     }
 
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < length.toNumber(); i++) {
       hexes.push(_cursor)
       _cursor = neighborOf(_cursor, direction)
     }
@@ -77,14 +78,14 @@ function lineFromBetweenOptions<T extends Hex>({ start, stop }: LineBetweenOptio
 }
 
 function nudge({ q, r, s }: CubeCoordinates): CubeCoordinates {
-  return { q: q + 1e-6, r: r + 1e-6, s: s + -2e-6 }
+  return { q: q.plus(1e-6), r: r.plus(1e-6), s: s.minus(2e-6) }
 }
 
 // linear interpolation
 function lerp(a: CubeCoordinates, b: CubeCoordinates) {
   return (t: number): AxialCoordinates => {
-    const q = a.q * (1 - t) + b.q * t
-    const r = a.r * (1 - t) + b.r * t
+    const q = a.q.mul(1 - t).plus(b.q.mul(t))
+    const r = a.r.mul(1 - t).plus(b.r.mul(t))
     return { q, r }
   }
 }

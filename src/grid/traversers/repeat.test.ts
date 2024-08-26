@@ -1,8 +1,9 @@
+import Decimal from 'decimal.js'
 import { expect, test, vi } from 'vitest'
 import { Hex, HexCoordinates } from '../../hex'
 import { repeat } from './repeat'
 
-const cursor: HexCoordinates = [1, 2]
+const cursor: HexCoordinates = [new Decimal(1), new Decimal(2)]
 const createHex = (coordinates?: HexCoordinates) => new Hex(coordinates)
 
 test('accepts a number and one or more traversers and returns a traverser that repeats the passed traversers', () => {
@@ -13,16 +14,16 @@ test('accepts a number and one or more traversers and returns a traverser that r
   expect(result).toMatchInlineSnapshot(`
     [
       Hex {
-        "q": 0,
-        "r": 0,
+        "q": "0",
+        "r": "0",
       },
       Hex {
-        "q": 0,
-        "r": 0,
+        "q": "0",
+        "r": "0",
       },
       Hex {
-        "q": 0,
-        "r": 0,
+        "q": "0",
+        "r": "0",
       },
     ]
   `)

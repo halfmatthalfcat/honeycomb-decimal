@@ -1,15 +1,18 @@
-import { offsetFromZero } from '../../utils'
+import Decimal from 'decimal.js'
+import { offsetDelta } from '../../utils'
 import { Hex } from '../hex'
 import { HexOffset, OffsetCoordinates } from '../types'
 
-const hexToOffsetPointy = (q: number, r: number, offset: HexOffset): OffsetCoordinates => ({
-  col: q + offsetFromZero(offset, r),
+Decimal.set({ rounding: 7 })
+
+const hexToOffsetPointy = (q: Decimal, r: Decimal, offset: HexOffset): OffsetCoordinates => ({
+  col: q.plus(offsetDelta(offset, r).round()),
   row: r,
 })
 
-const hexToOffsetFlat = (q: number, r: number, offset: HexOffset): OffsetCoordinates => ({
+const hexToOffsetFlat = (q: Decimal, r: Decimal, offset: HexOffset): OffsetCoordinates => ({
   col: q,
-  row: r + offsetFromZero(offset, q),
+  row: r.plus(offsetDelta(offset, q).round()),
 })
 
 /**

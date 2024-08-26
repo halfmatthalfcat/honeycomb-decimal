@@ -1,5 +1,6 @@
 /* eslint @typescript-eslint/class-literal-property-style: ["error", "getters"] */
 
+import Decimal from 'decimal.js'
 import { isOffset } from '../utils'
 import { equals, hexToOffset, hexToPoint, offsetToCube, toCube, translate } from './functions'
 import {
@@ -32,10 +33,10 @@ export class Hex
    */
   get center(): Point {
     const { width, height, x, y } = this
-    return { x: width / 2 - x, y: height / 2 - y }
+    return { x: new Decimal(width).div(2).minus(x), y: new Decimal(height).div(2).minus(y) }
   }
 
-  get col(): number {
+  get col(): Decimal {
     return hexToOffset(this).col
   }
 
@@ -49,12 +50,14 @@ export class Hex
     return defaultHexSettings.dimensions
   }
 
-  get height(): number {
+  get height(): Decimal {
     const {
       orientation,
       dimensions: { yRadius },
     } = this
-    return orientation === Orientation.POINTY ? yRadius * 2 : yRadius * Math.sqrt(3)
+    return orientation === Orientation.POINTY
+      ? new Decimal(yRadius).mul(2)
+      : new Decimal(yRadius).mul(new Decimal(3).sqrt())
   }
 
   get isFlat(): boolean {
@@ -77,34 +80,36 @@ export class Hex
     return defaultHexSettings.offset
   }
 
-  get row(): number {
+  get row(): Decimal {
     return hexToOffset(this).row
   }
 
-  get width(): number {
+  get width(): Decimal {
     const {
       orientation,
       dimensions: { xRadius },
     } = this
-    return orientation === Orientation.POINTY ? xRadius * Math.sqrt(3) : xRadius * 2
+    return orientation === Orientation.POINTY
+      ? new Decimal(xRadius).mul(new Decimal(3).sqrt())
+      : new Decimal(xRadius).mul(2)
   }
 
-  get x(): number {
+  get x(): Decimal {
     return hexToPoint(this).x
   }
 
-  get y(): number {
+  get y(): Decimal {
     return hexToPoint(this).y
   }
 
-  get s(): number {
-    return -this.q - this.r
+  get s(): Decimal {
+    return this.q.neg().minus(this.r)
   }
 
-  readonly q: number
-  readonly r: number
+  readonly q: Decimal
+  readonly r: Decimal
 
-  constructor(coordinates: HexCoordinates = [0, 0]) {
+  constructor(coordinates: HexCoordinates = [new Decimal(0), new Decimal(0)]) {
     const { q, r } = toCube(this, coordinates)
     this.q = q
     this.r = r
@@ -119,7 +124,7 @@ export class Hex
   }
 
   toString() {
-    return `${this.constructor.name}(${this.q},${this.r})`
+    return `${this.constructor.name}(${this.q.toString()},${this.r.toString()})`
   }
 
   translate(delta: PartialCubeCoordinates) {
@@ -133,24 +138,24 @@ export class Hex
 export const defaultHexSettings: HexSettings = {
   dimensions: { xRadius: 1, yRadius: 1 },
   orientation: Orientation.POINTY,
-  origin: { x: 0, y: 0 },
+  origin: { x: new Decimal(0), y: new Decimal(0) },
   offset: -1,
 }
 
-const cornersPointy = (width: number, height: number, x: number, y: number) => [
-  { x: x + width * 0.5, y: y - height * 0.25 },
-  { x: x + width * 0.5, y: y + height * 0.25 },
-  { x, y: y + height * 0.5 },
-  { x: x - width * 0.5, y: y + height * 0.25 },
-  { x: x - width * 0.5, y: y - height * 0.25 },
-  { x, y: y - height * 0.5 },
+const cornersPointy = (width: Decimal, height: Decimal, x: Decimal, y: Decimal) => [
+  { x: width.times(0.5).plus(x), y: height.times(-0.25).plus(y) },
+  { x: width.times(0.5).plus(x), y: height.times(0.25).plus(y) },
+  { x, y: height.times(0.5).plus(y) },
+  { x: width.times(-0.5).plus(x), y: height.times(0.25).plus(y) },
+  { x: width.times(-0.5).plus(x), y: height.times(-0.25).plus(y) },
+  { x, y: height.times(-0.5).plus(y) },
 ]
 
-const cornersFlat = (width: number, height: number, x: number, y: number) => [
-  { x: x + width * 0.25, y: y - height * 0.5 },
-  { x: x + width * 0.5, y },
-  { x: x + width * 0.25, y: y + height * 0.5 },
-  { x: x - width * 0.25, y: y + height * 0.5 },
-  { x: x - width * 0.5, y },
-  { x: x - width * 0.25, y: y - height * 0.5 },
+const cornersFlat = (width: Decimal, height: Decimal, x: Decimal, y: Decimal) => [
+  { x: width.times(0.25).plus(x), y: height.times(-0.5).plus(y) },
+  { x: width.times(0.5).plus(x), y },
+  { x: width.times(0.25).plus(x), y: height.times(0.5).plus(y) },
+  { x: width.times(-0.25).plus(x), y: height.times(0.5).plus(y) },
+  { x: width.times(-0.5).plus(x), y },
+  { x: width.times(-0.25).plus(x), y: height.times(-0.5).plus(y) },
 ]

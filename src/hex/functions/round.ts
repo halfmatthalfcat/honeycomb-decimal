@@ -1,24 +1,27 @@
+import Decimal from 'decimal.js'
 import { CubeCoordinates, PartialCubeCoordinates } from '../types'
 import { completeCube } from './completeCube'
+
+Decimal.set({ rounding: 7 })
 
 /**
  * @category Hex
  */
 export const round = (coordinates: PartialCubeCoordinates): CubeCoordinates => {
   const { q, r, s } = completeCube(coordinates)
-  let roundedQ = Math.round(q)
-  let roundedR = Math.round(r)
-  let roundedS = Math.round(s)
-  const diffQ = Math.abs(q - roundedQ)
-  const diffR = Math.abs(r - roundedR)
-  const diffS = Math.abs(s - roundedS)
+  let roundedQ = q.round()
+  let roundedR = r.round()
+  let roundedS = s.round()
+  const diffQ = roundedQ.minus(q).abs()
+  const diffR = roundedR.minus(r).abs()
+  const diffS = roundedS.minus(s).abs()
 
-  if (diffQ > diffR && diffQ > diffS) {
-    roundedQ = -roundedR - roundedS
-  } else if (diffR > diffS) {
-    roundedR = -roundedQ - roundedS
+  if (diffQ.greaterThan(diffR) && diffQ.greaterThan(diffS)) {
+    roundedQ = roundedR.neg().minus(roundedS)
+  } else if (diffR.greaterThan(diffS)) {
+    roundedR = roundedQ.neg().minus(roundedS)
   } else {
-    roundedS = -roundedQ - roundedR
+    roundedS = roundedQ.neg().minus(roundedR)
   }
 
   return { q: roundedQ, r: roundedR, s: roundedS }

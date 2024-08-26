@@ -1,8 +1,9 @@
+import Decimal from 'decimal.js'
 import { expect, test, vi } from 'vitest'
 import { Hex, HexCoordinates } from '../../hex'
 import { concat } from './concat'
 
-const cursor: HexCoordinates = [1, 2]
+const cursor: HexCoordinates = [new Decimal(1), new Decimal(2)]
 const createHex = (coordinates?: HexCoordinates) => new Hex(coordinates)
 
 test('accepts a traverser and returns it', () => {
@@ -15,16 +16,16 @@ test('accepts multiple traversers in an array and returns a single traverser', (
   expect(concat([traverser, traverser, traverser])(createHex, cursor)).toMatchInlineSnapshot(`
     [
       Hex {
-        "q": 1,
-        "r": 2,
+        "q": "1",
+        "r": "2",
       },
       Hex {
-        "q": 1,
-        "r": 2,
+        "q": "1",
+        "r": "2",
       },
       Hex {
-        "q": 1,
-        "r": 2,
+        "q": "1",
+        "r": "2",
       },
     ]
   `)

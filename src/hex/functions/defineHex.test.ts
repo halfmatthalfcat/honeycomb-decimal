@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { expect, test } from 'vitest'
 import { defaultHexSettings, Hex } from '../hex'
 import { Ellipse, HexOffset, Orientation, Point } from '../types'
@@ -33,6 +34,6 @@ test('accepts an object with hex options', () => {
 
   expect(hex.dimensions).toEqual<Ellipse>({ xRadius: 10, yRadius: 10 })
   expect(hex.orientation).toEqual<Orientation>(Orientation.FLAT)
-  expect(hex.origin).toEqual<Point>({ x: -10, y: -8.660254037844386 })
+  expect(hex.origin).toEqual<Point>({ x: new Decimal(-10), y: new Decimal('-8.6602540378443864675') })
   expect(hex.offset).toEqual<HexOffset>(1)
 })

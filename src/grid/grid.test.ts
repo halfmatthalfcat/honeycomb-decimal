@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { describe, expect, expectTypeOf, Mock, test, vi } from 'vitest'
 import { AxialCoordinates, defineHex, Hex, HexCoordinates, HexSettings, Orientation } from '../hex'
 import { Grid } from './grid'
@@ -34,8 +35,11 @@ describe('creation', () => {
   })
 
   test('creates a grid from a hex constructor and one or more traversers', () => {
-    const singleTraverserGrid = new Grid(Hex, fromCoordinates([1, 2]))
-    const multiTraverserGrid = new Grid(Hex, [fromCoordinates([1, 2]), fromCoordinates([3, 4])])
+    const singleTraverserGrid = new Grid(Hex, fromCoordinates([new Decimal(1), new Decimal(2)]))
+    const multiTraverserGrid = new Grid(Hex, [
+      fromCoordinates([new Decimal(1), new Decimal(2)]),
+      fromCoordinates([new Decimal(3), new Decimal(4)]),
+    ])
 
     expect(singleTraverserGrid).toBeInstanceOf(Grid)
     expect(singleTraverserGrid.size).toBe(1)
@@ -46,10 +50,10 @@ describe('creation', () => {
 
   test('creates a grid from an iterable of hex coordinates', () => {
     const generator = function* (): Generator<HexCoordinates> {
-      yield [1, 2]
+      yield [new Decimal(1), new Decimal(2)]
     }
-    const gridFromArray = new Grid(Hex, [[3, 4]])
-    const gridFromSet = new Grid(Hex, new Set<HexCoordinates>([[5, 6]]))
+    const gridFromArray = new Grid(Hex, [[new Decimal(3), new Decimal(4)]])
+    const gridFromSet = new Grid(Hex, new Set<HexCoordinates>([[new Decimal(5), new Decimal(6)]]))
     const gridFromGenerator = new Grid(Hex, generator())
 
     expect(gridFromArray).toBeInstanceOf(Grid)
@@ -119,12 +123,12 @@ describe('static fromJSON()', () => {
     const hexSettings: HexSettings = {
       dimensions: { xRadius: 10, yRadius: 10 },
       orientation: Orientation.FLAT,
-      origin: { x: 0, y: 0 },
+      origin: { x: new Decimal(0), y: new Decimal(0) },
       offset: 1,
     }
     const coordinates: AxialCoordinates[] = [
-      { q: 0, r: 0 },
-      { q: 1, r: 0 },
+      { q: new Decimal(0), r: new Decimal(0) },
+      { q: new Decimal(1), r: new Decimal(0) },
     ]
     const result = Grid.fromJSON({ hexSettings, coordinates })
 
@@ -140,8 +144,8 @@ describe('static fromJSON()', () => {
 
   test('accepts an optional hex factory to create custom hexes with', () => {
     const coordinates: DeserializedCustomHex[] = [
-      { q: 0, r: 0, custom: 'a' },
-      { q: 1, r: 0, custom: 'b' },
+      { q: new Decimal(0), r: new Decimal(0), custom: 'a' },
+      { q: new Decimal(1), r: new Decimal(0), custom: 'b' },
     ]
     const hexFactory = vi.fn(({ q, r, custom }: DeserializedCustomHex) => CustomHex.create([q, r], custom))
     const result = Grid.fromJSON({ hexSettings: CustomHex.settings, coordinates }, hexFactory)
@@ -169,12 +173,12 @@ describe('static fromJSON()', () => {
 })
 
 test('has size property that is the amount of hexes in the grid', () => {
-  expect(new Grid(Hex, rectangle({ width: 5, height: 5 })).size).toBe(25)
+  expect(new Grid(Hex, rectangle({ width: new Decimal(5), height: new Decimal(5) })).size).toBe(25)
 })
 
 describe('pixelWidth property', () => {
   test('return 0 when the grid has no hexes', () => {
-    expect(new Grid(Hex).pixelWidth).toBe(0)
+    expect(new Grid(Hex).pixelWidth).toStrictEqual(new Decimal(0))
   })
 
   test('returns the width in pixels', () => {
@@ -183,15 +187,19 @@ describe('pixelWidth property', () => {
     const FlatHex = defineHex({ dimensions: 10, orientation: Orientation.FLAT })
     const flatHexWidth = FlatHex.prototype.width
 
-    expect(new Grid(PointyHex, rectangle({ width: 5, height: 1 })).pixelWidth).toBe(5 * pointyHexWidth)
+    expect(new Grid(PointyHex, rectangle({ width: new Decimal(5), height: new Decimal(1) })).pixelWidth).toStrictEqual(
+      pointyHexWidth.mul(5),
+    )
     // flat hexes partially overlap in horizontal plane
-    expect(new Grid(FlatHex, rectangle({ width: 5, height: 1 })).pixelWidth).toBe(5 * flatHexWidth - flatHexWidth)
+    expect(new Grid(FlatHex, rectangle({ width: new Decimal(5), height: new Decimal(1) })).pixelWidth).toStrictEqual(
+      flatHexWidth.mul(5).minus(flatHexWidth),
+    )
   })
 })
 
 describe('pixelHeight property', () => {
   test('return 0 when the grid has no hexes', () => {
-    expect(new Grid(Hex).pixelHeight).toBe(0)
+    expect(new Grid(Hex).pixelHeight).toStrictEqual(new Decimal(0))
   })
 
   test('returns the height in pixels', () => {
@@ -201,34 +209,36 @@ describe('pixelHeight property', () => {
     const flatHexHeight = FlatHex.prototype.height
 
     // pointy hexes partially overlap in vertical plane
-    expect(new Grid(PointyHex, rectangle({ width: 1, height: 5 })).pixelHeight).toBe(
-      5 * pointyHexHeight - pointyHexHeight,
+    expect(new Grid(PointyHex, rectangle({ width: new Decimal(1), height: new Decimal(5) })).pixelHeight).toStrictEqual(
+      pointyHexHeight.mul(5).minus(pointyHexHeight),
     )
-    expect(new Grid(FlatHex, rectangle({ width: 1, height: 5 })).pixelHeight).toBe(5 * flatHexHeight)
+    expect(new Grid(FlatHex, rectangle({ width: new Decimal(1), height: new Decimal(5) })).pixelHeight).toStrictEqual(
+      flatHexHeight.mul(5),
+    )
   })
 })
 
 test('iterable', () => {
-  const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+  const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
 
   expect(grid[Symbol.iterator]).toBeTypeOf('function')
   expect([...grid]).toMatchInlineSnapshot(`
     [
       Hex {
-        "q": 0,
-        "r": 0,
+        "q": "0",
+        "r": "0",
       },
       Hex {
-        "q": 1,
-        "r": 0,
+        "q": "1",
+        "r": "0",
       },
       Hex {
-        "q": 0,
-        "r": 1,
+        "q": "0",
+        "r": "1",
       },
       Hex {
-        "q": 1,
-        "r": 1,
+        "q": "1",
+        "r": "1",
       },
     ]
   `)
@@ -236,28 +246,30 @@ test('iterable', () => {
 
 describe('createHex()', () => {
   test(`uses the grid's hex constructor to create a hex`, () => {
-    expect(new Grid(Hex).createHex([5, 2])).toStrictEqual(new Hex([5, 2]))
+    expect(new Grid(Hex).createHex([new Decimal(5), new Decimal(2)])).toStrictEqual(
+      new Hex([new Decimal(5), new Decimal(2)]),
+    )
   })
 })
 
 describe('getHex()', () => {
   test('returns the hex with the passed coordinates when present in the grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    expect(grid.getHex([1, 0])).toStrictEqual(new Hex([1, 0]))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    expect(grid.getHex([new Decimal(1), new Decimal(0)])).toStrictEqual(new Hex([new Decimal(1), new Decimal(0)]))
   })
 
   test(`returns undefined when the hex with the passed coordinates doesn't exist in the grid`, () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    expect(grid.getHex([20, 40])).toBeUndefined()
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    expect(grid.getHex([new Decimal(20), new Decimal(40)])).toBeUndefined()
   })
 })
 
 describe('hasHex()', () => {
   test('returns whether the passed hex is present in the grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
 
-    expect(grid.hasHex(new Hex([0, 1]))).toBe(true)
-    expect(grid.hasHex(new Hex([10, 30]))).toBe(false)
+    expect(grid.hasHex(new Hex([new Decimal(0), new Decimal(1)]))).toBe(true)
+    expect(grid.hasHex(new Hex([new Decimal(10), new Decimal(30)]))).toBe(false)
   })
 })
 
@@ -266,7 +278,7 @@ describe('setHexes()', () => {
     const grid = new Grid(Hex)
     expect(grid.size).toBe(0)
 
-    const hexes = [new Hex([2, 3]), [1, -4] as HexCoordinates]
+    const hexes = [new Hex([new Decimal(2), new Decimal(3)]), [new Decimal(1), new Decimal(-4)] as HexCoordinates]
     const result = grid.setHexes(hexes)
     expect(result).toStrictEqual(new Grid(Hex, hexes))
     expect(result).toBe(grid)
@@ -275,28 +287,28 @@ describe('setHexes()', () => {
 
 describe('filter()', () => {
   test('returns a new grid with only the hexes for which the predicate function returns true', () => {
-    const grid = new Grid(Hex, rectangle({ width: 5, height: 5 }))
-    const predicate: Mock<[Hex], boolean> = vi.fn((hex) => hex.q < 0)
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(5), height: new Decimal(5) }))
+    const predicate: Mock<[Hex], boolean> = vi.fn((hex) => hex.q.lessThan(0))
     const result = grid.filter(predicate)
 
     expect(predicate).toBeCalledTimes(25)
     expect(result.toArray()).toMatchInlineSnapshot(`
       [
         Hex {
-          "q": -1,
-          "r": 2,
+          "q": "-1",
+          "r": "2",
         },
         Hex {
-          "q": -1,
-          "r": 3,
+          "q": "-1",
+          "r": "3",
         },
         Hex {
-          "q": -2,
-          "r": 4,
+          "q": "-2",
+          "r": "4",
         },
         Hex {
-          "q": -1,
-          "r": 4,
+          "q": "-1",
+          "r": "4",
         },
       ]
     `)
@@ -306,28 +318,28 @@ describe('filter()', () => {
 
 describe('map()', () => {
   test('returns a new grid with each hex mapped by the passed function', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    const fn: Mock<[Hex], Hex> = vi.fn((hex) => hex.clone({ q: hex.q + 1, s: hex.s - 1 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    const fn: Mock<[Hex], Hex> = vi.fn((hex) => hex.clone({ q: hex.q.plus(1), s: hex.s.minus(1) }))
     const result = grid.map(fn)
 
     expect(fn).toBeCalledTimes(4)
     expect(result.toArray()).toMatchInlineSnapshot(`
       [
         Hex {
-          "q": 1,
-          "r": 0,
+          "q": "1",
+          "r": "0",
         },
         Hex {
-          "q": 2,
-          "r": 0,
+          "q": "2",
+          "r": "0",
         },
         Hex {
-          "q": 1,
-          "r": 1,
+          "q": "1",
+          "r": "1",
         },
         Hex {
-          "q": 2,
-          "r": 1,
+          "q": "2",
+          "r": "1",
         },
       ]
     `)
@@ -337,8 +349,12 @@ describe('map()', () => {
 
 describe('traverse()', () => {
   test('iterates over the hexes from the passed traverser and returns a new grid with hexes present in the source grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    const traverser = rectangle({ start: [1, 0], width: 2, height: 2 })
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    const traverser = rectangle({
+      start: [new Decimal(1), new Decimal(0)],
+      width: new Decimal(2),
+      height: new Decimal(2),
+    })
     const getHex = vi.spyOn(grid, 'getHex')
     const result = grid.traverse(traverser)
 
@@ -346,12 +362,12 @@ describe('traverse()', () => {
     expect(result.toArray()).toMatchInlineSnapshot(`
       [
         Hex {
-          "q": 1,
-          "r": 0,
+          "q": "1",
+          "r": "0",
         },
         Hex {
-          "q": 1,
-          "r": 1,
+          "q": "1",
+          "r": "1",
         },
       ]
     `)
@@ -359,48 +375,55 @@ describe('traverse()', () => {
   })
 
   test(`stops iteration early when bail is true and a hex isn't present in the source grid`, () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    const traverser = rectangle({ start: [1, 0], width: 100, height: 100 })
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    const traverser = rectangle({
+      start: [new Decimal(1), new Decimal(0)],
+      width: new Decimal(100),
+      height: new Decimal(100),
+    })
     const getHex = vi.spyOn(grid, 'getHex')
     const result = grid.traverse(traverser, { bail: true })
 
     expect(getHex).toBeCalledTimes(2) // *after* getHex() returns undefined it can bail
-    expect(result).toStrictEqual(new Grid(Hex, [[1, 0]]))
+    expect(result).toStrictEqual(new Grid(Hex, [[new Decimal(1), new Decimal(0)]]))
   })
 
   test('iterates over the hexes from the passed iterable and returns a new grid with hexes present in the source grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    const iterable = [new Hex([1, 0]), [0, 1] as HexCoordinates]
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    const iterable = [new Hex([new Decimal(1), new Decimal(0)]), [new Decimal(0), new Decimal(1)] as HexCoordinates]
     const result = grid.traverse(iterable)
 
     expect(result.toArray()).toMatchInlineSnapshot(`
       [
         Hex {
-          "q": 1,
-          "r": 0,
+          "q": "1",
+          "r": "0",
         },
         Hex {
-          "q": 0,
-          "r": 1,
+          "q": "0",
+          "r": "1",
         },
       ]
     `)
   })
 
   test('iterates over the hexes from the passed grid and returns a new grid with hexes present in the source grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    const otherGrid = new Grid(Hex, rectangle({ start: [0, 1], width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    const otherGrid = new Grid(
+      Hex,
+      rectangle({ start: [new Decimal(0), new Decimal(1)], width: new Decimal(2), height: new Decimal(2) }),
+    )
     const result = grid.traverse(otherGrid)
 
     expect(result.toArray()).toMatchInlineSnapshot(`
       [
         Hex {
-          "q": 0,
-          "r": 1,
+          "q": "0",
+          "r": "1",
         },
         Hex {
-          "q": 1,
-          "r": 1,
+          "q": "1",
+          "r": "1",
         },
       ]
     `)
@@ -409,7 +432,7 @@ describe('traverse()', () => {
 
 describe('forEach()', () => {
   test('passes each hex to the provided callback and returns itself', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
     const fn: Mock<[Hex], void> = vi.fn()
     const result = grid.forEach(fn)
 
@@ -417,20 +440,20 @@ describe('forEach()', () => {
     expect(result.toArray()).toMatchInlineSnapshot(`
       [
         Hex {
-          "q": 0,
-          "r": 0,
+          "q": "0",
+          "r": "0",
         },
         Hex {
-          "q": 1,
-          "r": 0,
+          "q": "1",
+          "r": "0",
         },
         Hex {
-          "q": 0,
-          "r": 1,
+          "q": "0",
+          "r": "1",
         },
         Hex {
-          "q": 1,
-          "r": 1,
+          "q": "1",
+          "r": "1",
         },
       ]
     `)
@@ -440,56 +463,56 @@ describe('forEach()', () => {
 
 describe('reduce()', () => {
   test('passes the previous and current hex to the provided callback and returns the result', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
     const reducer: Mock<[Hex, Hex], Hex> = vi.fn((previousHex, hex) => previousHex.translate(hex))
     const result = grid.reduce(reducer)
 
     expect(reducer).toBeCalledTimes(3)
-    expect(result).toStrictEqual(new Hex([1, 2]))
+    expect(result).toStrictEqual(new Hex([new Decimal(1), new Decimal(2)]))
   })
 
   test('passes the initial hex and current hex to the provided callback and returns the result', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
     const reducer: Mock<[Hex, Hex], Hex> = vi.fn((acc, hex) => acc.translate(hex))
-    const result = grid.reduce(reducer, new Hex([10, 10]))
+    const result = grid.reduce(reducer, new Hex([new Decimal(10), new Decimal(10)]))
 
     expect(reducer).toBeCalledTimes(4)
-    expect(result).toStrictEqual(new Hex([12, 12]))
+    expect(result).toStrictEqual(new Hex([new Decimal(12), new Decimal(12)]))
   })
 
   test('passes the initial value and current hex to the provided callback and returns the result', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    const reducer: Mock<[number, Hex], number> = vi.fn((acc, hex) => acc + hex.q)
-    const result = grid.reduce(reducer, 0)
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    const reducer: Mock<[Decimal, Hex], Decimal> = vi.fn((acc, hex) => hex.q.plus(acc))
+    const result = grid.reduce(reducer, new Decimal(0))
 
     expect(reducer).toBeCalledTimes(4)
-    expect(result).toBe(2)
+    expect(result).toStrictEqual(new Decimal(2))
   })
 })
 
 describe('toArray()', () => {
   test('returns an array of the hexes in the grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
     const result = grid.toArray()
 
     expect(result).toBeInstanceOf(Array)
     expect(result).toMatchInlineSnapshot(`
       [
         Hex {
-          "q": 0,
-          "r": 0,
+          "q": "0",
+          "r": "0",
         },
         Hex {
-          "q": 1,
-          "r": 0,
+          "q": "1",
+          "r": "0",
         },
         Hex {
-          "q": 0,
-          "r": 1,
+          "q": "0",
+          "r": "1",
         },
         Hex {
-          "q": 1,
-          "r": 1,
+          "q": "1",
+          "r": "1",
         },
       ]
     `)
@@ -501,24 +524,24 @@ describe('toJSON()', () => {
     const hexSettings: HexSettings = {
       dimensions: { xRadius: 10, yRadius: 10 },
       orientation: Orientation.FLAT,
-      origin: { x: 0, y: 0 },
+      origin: { x: new Decimal(0), y: new Decimal(0) },
       offset: 1,
     }
     const TestHex = defineHex(hexSettings)
-    const coordinates = [new TestHex([0, 0]), new TestHex([1, 0])]
+    const coordinates = [new TestHex([new Decimal(0), new Decimal(0)]), new TestHex([new Decimal(1), new Decimal(0)])]
     const grid = new Grid(TestHex, coordinates)
     const result = grid.toJSON()
 
     expect(result).toStrictEqual({ hexSettings, coordinates })
     expect(JSON.stringify(grid)).toMatchInlineSnapshot(
-      '"{\\"hexSettings\\":{\\"dimensions\\":{\\"xRadius\\":10,\\"yRadius\\":10},\\"orientation\\":\\"FLAT\\",\\"origin\\":{\\"x\\":0,\\"y\\":0},\\"offset\\":1},\\"coordinates\\":[{\\"q\\":0,\\"r\\":0},{\\"q\\":1,\\"r\\":0}]}"',
+      '"{\\"hexSettings\\":{\\"dimensions\\":{\\"xRadius\\":10,\\"yRadius\\":10},\\"orientation\\":\\"FLAT\\",\\"origin\\":{\\"x\\":\\"0\\",\\"y\\":\\"0\\"},\\"offset\\":1},\\"coordinates\\":[{\\"q\\":\\"0\\",\\"r\\":\\"0\\"},{\\"q\\":\\"1\\",\\"r\\":\\"0\\"}]}"',
     )
   })
 })
 
 describe('toString()', () => {
   test('returns the constructor name and size', () => {
-    const grid = new Grid(Hex, rectangle({ width: 5, height: 5 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(5), height: new Decimal(5) }))
 
     expect(grid.toString()).toBe('Grid(25)')
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -529,52 +552,56 @@ describe('toString()', () => {
 describe('pointToHex()', () => {
   test('returns the hex that corresponds to the passed point, even outside the grid', () => {
     const TestHex = defineHex({ dimensions: 10 })
-    const grid = new Grid(TestHex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(TestHex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
 
-    expect(grid.pointToHex({ x: 20, y: 20 })).toBe(grid.getHex([1, 1]))
-    expect(grid.pointToHex({ x: 1000, y: 1000 })).toBeInstanceOf(TestHex)
+    expect(grid.pointToHex({ x: new Decimal(20), y: new Decimal(20) })).toBe(
+      grid.getHex([new Decimal(1), new Decimal(1)]),
+    )
+    expect(grid.pointToHex({ x: new Decimal(1000), y: new Decimal(1000) })).toBeInstanceOf(TestHex)
   })
 
   test(`when allowOutside is false, returns the hex that corresponds to the point when it's present in the grid`, () => {
     const TestHex = defineHex({ dimensions: 10 })
-    const grid = new Grid(TestHex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(TestHex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
 
-    expect(grid.pointToHex({ x: 1000, y: 1000 }, { allowOutside: false })).toBeUndefined()
+    expect(grid.pointToHex({ x: new Decimal(1000), y: new Decimal(1000) }, { allowOutside: false })).toBeUndefined()
   })
 })
 
 describe('distance()', () => {
   test('returns the distance in hexes between the passed two coordinates, even outside the grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
 
-    expect(grid.distance([0, 0], [1, 1])).toBe(2)
-    expect(grid.distance([0, 0], [100, 100])).toBeTypeOf('number')
+    expect(grid.distance([new Decimal(0), new Decimal(0)], [new Decimal(1), new Decimal(1)])).toBe(2)
+    expect(grid.distance([new Decimal(0), new Decimal(0)], [new Decimal(100), new Decimal(100)])).toBeTypeOf('number')
   })
 
   test(`when allowOutside is false, returns the distance in hexes between the passed two coordinates if they're present in the grid`, () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
-    expect(grid.distance([0, 0], [100, 100], { allowOutside: false })).toBeUndefined()
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
+    expect(
+      grid.distance([new Decimal(0), new Decimal(0)], [new Decimal(100), new Decimal(100)], { allowOutside: false }),
+    ).toBeUndefined()
   })
 })
 
 describe('neighborOf()', () => {
   test('returns the neighbor of the hex with the given coordinates in the given direction, even outside the grid', () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
 
-    const neighborInGrid = grid.neighborOf([0, 0], Direction.E)
-    const neighborOutsideGrid = grid.neighborOf([100, 100], Direction.E)
+    const neighborInGrid = grid.neighborOf([new Decimal(0), new Decimal(0)], Direction.E)
+    const neighborOutsideGrid = grid.neighborOf([new Decimal(100), new Decimal(100)], Direction.E)
 
-    expect(neighborInGrid).toBe(grid.getHex([1, 0]))
-    expect(neighborOutsideGrid).not.toBe(grid.getHex([101, 100]))
-    expect(neighborOutsideGrid).toStrictEqual(new Hex([101, 100]))
+    expect(neighborInGrid).toBe(grid.getHex([new Decimal(1), new Decimal(0)]))
+    expect(neighborOutsideGrid).not.toBe(grid.getHex([new Decimal(101), new Decimal(100)]))
+    expect(neighborOutsideGrid).toStrictEqual(new Hex([new Decimal(101), new Decimal(100)]))
   })
 
   test(`when allowOutside is false, returns the neighbor of the hex with the given coordinates in the given direction if they're present in the grid`, () => {
-    const grid = new Grid(Hex, rectangle({ width: 2, height: 2 }))
+    const grid = new Grid(Hex, rectangle({ width: new Decimal(2), height: new Decimal(2) }))
 
     // hex with coordinates doesn't exist
-    expect(grid.neighborOf([100, 100], Direction.E, { allowOutside: false })).toBeUndefined()
+    expect(grid.neighborOf([new Decimal(100), new Decimal(100)], Direction.E, { allowOutside: false })).toBeUndefined()
     // neighbor doesn't exist
-    expect(grid.neighborOf([1, 1], Direction.E, { allowOutside: false })).toBeUndefined()
+    expect(grid.neighborOf([new Decimal(1), new Decimal(1)], Direction.E, { allowOutside: false })).toBeUndefined()
   })
 })

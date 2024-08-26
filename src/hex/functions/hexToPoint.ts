@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { Hex } from '../hex'
 import { Orientation, Point } from '../types'
 
@@ -7,10 +8,10 @@ import { Orientation, Point } from '../types'
 export const hexToPoint = ({ orientation, dimensions: { xRadius, yRadius }, origin: { x, y }, q, r }: Hex): Point =>
   orientation === Orientation.POINTY
     ? {
-        x: xRadius * Math.sqrt(3) * (q + r / 2) - x,
-        y: ((yRadius * 3) / 2) * r - y,
+        x: x.neg().plus(new Decimal(3).sqrt().mul(xRadius).mul(new Decimal(r).div(2).plus(q))),
+        y: y.neg().plus(new Decimal(r).mul(new Decimal(yRadius).mul(3).div(2))),
       }
     : {
-        x: ((xRadius * 3) / 2) * q - x,
-        y: yRadius * Math.sqrt(3) * (r + q / 2) - y,
+        x: x.neg().plus(new Decimal(q).mul(new Decimal(xRadius).mul(3).div(2))),
+        y: y.neg().plus(new Decimal(3).sqrt().mul(yRadius).mul(new Decimal(q).div(2).plus(r))),
       }

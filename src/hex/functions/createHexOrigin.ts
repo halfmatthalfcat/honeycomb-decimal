@@ -11,10 +11,10 @@ export function createHexOrigin(input: Point | 'topLeft', boundingBox?: Bounding
 
   if (!boundingBox)
     throw new TypeError(
-      `Supply a bounding box ({ width: number, height: number }). Received: ${JSON.stringify(boundingBox)}`,
+      `Supply a bounding box ({ width: Decimal, height: Decimal }). Received: ${JSON.stringify(boundingBox)}`,
     )
 
-  if (input === 'topLeft') return { x: boundingBox.width * -0.5, y: boundingBox.height * -0.5 }
+  if (input === 'topLeft') return { x: boundingBox.width.mul(-0.5), y: boundingBox.height.mul(-0.5) }
 
   throw new TypeError(
     `Invalid origin: ${JSON.stringify(
